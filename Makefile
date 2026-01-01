@@ -97,45 +97,62 @@ submodules-check: ## Verify submodules are properly initialized
 # Toolchain from lean-toolchain file
 LEAN_TOOLCHAIN := $(shell cat lean-toolchain 2>/dev/null || echo "leanprover/lean4:v4.23.0")
 
+# FreeBSD pkg lean4 requires these environment variables
+# Note: FreeBSD lean4 pkg (as of 4.23.0) has a known issue where the lean
+# binary fails with "failed to locate application". Lake works with LAKE_HOME.
+FREEBSD_LEAN_ENV := LAKE_HOME=/usr/local LEAN_SYSROOT=/usr/local
+
 .PHONY: elan-install
-elan-install: ## Install elan and download Lean toolchain
+elan-install: ## Install elan and download Lean toolchain (Linux/macOS)
 	@echo "Installing elan (Lean version manager)..."
-	@if [ ! -d "$$HOME/.elan" ]; then \
-		curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y; \
-		echo "✓ Elan installed"; \
-	else \
-		echo "✓ Elan already installed"; \
-	fi
-	@echo "Installing toolchain: $(LEAN_TOOLCHAIN)..."
-	@$$HOME/.elan/bin/elan toolchain install $(LEAN_TOOLCHAIN)
-	@$$HOME/.elan/bin/elan default $(LEAN_TOOLCHAIN)
-	@echo "✓ Toolchain installed"
+	@case "$$(uname)" in \
+		FreeBSD) \
+			echo "On FreeBSD, use: pkg install lean4"; \
+			echo "Note: FreeBSD lean4 pkg has known issues."; \
+			;; \
+		*) \
+			if [ ! -d "$$HOME/.elan" ]; then \
+				curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y; \
+				echo "✓ Elan installed"; \
+			else \
+				echo "✓ Elan already installed"; \
+			fi; \
+			echo "Installing toolchain: $(LEAN_TOOLCHAIN)..."; \
+			$$HOME/.elan/bin/elan toolchain install $(LEAN_TOOLCHAIN); \
+			$$HOME/.elan/bin/elan default $(LEAN_TOOLCHAIN); \
+			echo "✓ Toolchain installed"; \
+			;; \
+	esac
 
 .PHONY: check-lean
 check-lean: ## Check if Lean 4 is installed and show version
 	@echo "Checking Lean 4 installation..."
-	@if command -v $(LEAN) >/dev/null 2>&1 && $(LEAN) --version 2>/dev/null; then \
+	@if [ -x "$$HOME/.elan/bin/lean" ] && $$HOME/.elan/bin/lean --version 2>/dev/null; then \
+		echo "✓ Lean found (elan): $$HOME/.elan/bin/lean"; \
+	elif pkg info lean4 >/dev/null 2>&1; then \
+		echo "✓ Lean 4 installed via FreeBSD pkg"; \
+		pkg info lean4 | grep Version; \
+		echo "  Note: FreeBSD lean4 pkg has known runtime issues"; \
+	elif command -v $(LEAN) >/dev/null 2>&1 && $(LEAN) --version 2>/dev/null; then \
 		echo "✓ Lean found: $$(which $(LEAN))"; \
-	elif [ -x "$$HOME/.elan/bin/lean" ]; then \
-		echo "✓ Lean found: $$HOME/.elan/bin/lean"; \
-		$$HOME/.elan/bin/lean --version; \
 	else \
-		echo "✗ Lean 4 not found or toolchain not installed"; \
-		echo "  Run: gmake elan-install"; \
+		echo "✗ Lean 4 not found"; \
+		echo "  Linux/macOS: gmake elan-install"; \
+		echo "  FreeBSD: pkg install lean4"; \
 		exit 1; \
 	fi
 
 .PHONY: check-lake
 check-lake: ## Check if Lake (Lean build tool) is installed
 	@echo "Checking Lake installation..."
-	@if command -v $(LAKE) >/dev/null 2>&1 && $(LAKE) --version 2>/dev/null; then \
+	@if [ -x "$$HOME/.elan/bin/lake" ] && $$HOME/.elan/bin/lake --version 2>/dev/null; then \
+		echo "✓ Lake found (elan): $$HOME/.elan/bin/lake"; \
+	elif $(FREEBSD_LEAN_ENV) $(LAKE) --version 2>/dev/null; then \
+		echo "✓ Lake found (FreeBSD pkg)"; \
+	elif command -v $(LAKE) >/dev/null 2>&1 && $(LAKE) --version 2>/dev/null; then \
 		echo "✓ Lake found: $$(which $(LAKE))"; \
-	elif [ -x "$$HOME/.elan/bin/lake" ]; then \
-		echo "✓ Lake found: $$HOME/.elan/bin/lake"; \
-		$$HOME/.elan/bin/lake --version; \
 	else \
 		echo "✗ Lake not found"; \
-		echo "  Run: gmake elan-install"; \
 		exit 1; \
 	fi
 
@@ -148,10 +165,40 @@ lean-build: ## Build Lean proofs
 	@echo "Building Lean proofs..."
 	@if [ -x "$$HOME/.elan/bin/lake" ]; then \
 		$$HOME/.elan/bin/lake build; \
+	elif pkg info lean4 >/dev/null 2>&1; then \
+		echo "FreeBSD lean4 pkg has known build issues."; \
+		echo "The lean binary fails with 'failed to locate application'."; \
+		echo "This appears to be a packaging bug. Lake partially works:"; \
+		$(FREEBSD_LEAN_ENV) $(LAKE) --version; \
+		echo "Attempting build (may fail)..."; \
+		$(FREEBSD_LEAN_ENV) $(LAKE) build || echo "Build failed - see above"; \
 	else \
 		$(LAKE) build; \
 	fi
-	@echo "✓ Lean build complete"
+
+.PHONY: lean-status
+lean-status: ## Show Lean installation status and known issues
+	@echo "Lean 4 Status"
+	@echo "============="
+	@echo ""
+	@echo "Platform: $$(uname -s) $$(uname -r)"
+	@echo ""
+	@if pkg info lean4 >/dev/null 2>&1; then \
+		echo "FreeBSD pkg lean4 installed:"; \
+		pkg info lean4 | grep -E 'Version|Installed'; \
+		echo ""; \
+		echo "Known Issues:"; \
+		echo "  - lean binary: 'failed to locate application' error"; \
+		echo "  - lake binary: works with LAKE_HOME=/usr/local"; \
+		echo "  - lean-build: fails due to lean binary issue"; \
+		echo ""; \
+		echo "Workaround: Use Linux VM or container for Lean proofs"; \
+	elif [ -x "$$HOME/.elan/bin/lean" ]; then \
+		echo "Elan installation found"; \
+		$$HOME/.elan/bin/lean --version; \
+	else \
+		echo "No Lean installation found"; \
+	fi
 
 # =============================================================================
 # Racket Contract Examples
