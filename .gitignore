@@ -1,0 +1,28 @@
+# Papers (downloaded)
+docs/papers/*.pdf
+
+# Lean build artifacts
+.lake/
+build/
+lake-packages/
+
+# Dafny artifacts
+*.dll
+*.exe
+*.pdb
+
+# Editor
+*~
+\#*\#
+.#*
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace

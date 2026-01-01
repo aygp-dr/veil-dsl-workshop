@@ -1,0 +1,89 @@
+#+TITLE: Veil DSL Workshop
+#+AUTHOR: AYGP-DR
+#+DATE: 2026-01-01
+#+OPTIONS: toc:2 num:t
+
+* Overview
+
+Workshop materials for learning Veil, a Domain-Specific Language (DSL) for verified information-flow security in Dafny.
+
+** What is Veil?
+
+Veil is a DSL embedded in Dafny that enables developers to:
+
+- Write security policies for information flow
+- Verify that code adheres to these security policies
+- Ensure confidentiality and integrity properties are maintained
+
+* Quick Start
+
+#+begin_src bash
+# Complete setup
+gmake setup
+
+# Or step by step:
+gmake dirs          # Create directories
+gmake paper         # Download the Veil paper
+gmake submodules    # Initialize git submodules
+gmake check-lean    # Verify Lean 4 installation
+#+end_src
+
+* Prerequisites
+
+** Lean 4
+
+Veil verification requires Lean 4. Install via elan:
+
+#+begin_src bash
+curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh
+#+end_src
+
+Verify installation:
+
+#+begin_src bash
+gmake check-lean
+#+end_src
+
+** Dafny
+
+Veil is embedded in Dafny. See [[https://dafny.org/][Dafny documentation]] for installation.
+
+* Project Structure
+
+#+begin_example
+veil-dsl-workshop/
+├── Makefile           # Build and setup targets
+├── README.org         # This file
+├── docs/
+│   └── papers/        # Downloaded papers including Veil paper
+├── tutorials/         # Step-by-step tutorials
+│   ├── 01-intro/
+│   ├── 02-basic-veil/
+│   ├── 03-information-flow/
+│   └── 04-verification/
+└── src/               # Example source code
+#+end_example
+
+* Make Targets
+
+| Target            | Description                              |
+|-------------------+------------------------------------------|
+| =help=            | Show available targets                   |
+| =setup=           | Complete setup (dirs, paper, lean check) |
+| =paper=           | Download the Veil paper                  |
+| =check-lean=      | Verify Lean 4 installation               |
+| =check-tools=     | Check all required tools                 |
+| =submodules=      | Initialize/update git submodules         |
+| =submodules-check= | Verify submodule integrity               |
+| =status=          | Show current setup status                |
+| =tutorial-init=   | Create tutorial directory structure      |
+
+* Resources
+
+- [[https://verse-lab.org/papers/veil-dafny26.pdf][Veil Paper (DAFNY '26)]]
+- [[https://dafny.org/][Dafny Language]]
+- [[https://lean-lang.org/][Lean 4]]
+
+* License
+
+MIT
