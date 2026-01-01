@@ -80,9 +80,23 @@ veil-dsl-workshop/
 
 * Resources
 
-- [[https://verse-lab.org/papers/veil-dafny26.pdf][Veil Paper (DAFNY '26)]]
-- [[https://dafny.org/][Dafny Language]]
-- [[https://lean-lang.org/][Lean 4]]
+** Papers & Tutorials
+
+- [[https://verse-lab.org/papers/veil-dafny26.pdf][Veil Paper (DAFNY '26)]] - Original paper on Veil DSL
+- [[https://popl26.sigplan.org/details/POPL-2026-tutorials/9/Veil-Automated-and-Interactive-Verification-of-Transition-Systems][POPL 2026 Tutorial: Veil - Automated and Interactive Verification of Transition Systems]]
+  - Presenters: George Pîrlea, Qiyuan Zhao (National University of Singapore)
+  - Date: Monday, January 12, 2026, 14:00-17:30 (Paris time)
+  - Location: Salle 20, le Couvent des Jacobins, Rennes, France
+
+** Tools & Languages
+
+- [[https://lean-lang.org/][Lean 4]] - Theorem prover and programming language
+- [[https://dafny.org/][Dafny Language]] - Verification-aware programming language
+- [[https://racket-lang.org/][Racket]] - For contract-based programming examples
+
+** Related Projects
+
+- [[https://github.com/verse-lab][VERSE Lab]] - Research group behind Veil
 
 * License
 
