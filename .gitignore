@@ -5,6 +5,7 @@ docs/papers/*.pdf
 .lake/
 build/
 lake-packages/
+lake-manifest.json
 
 # Dafny artifacts
 *.dll
