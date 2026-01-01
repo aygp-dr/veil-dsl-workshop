@@ -94,32 +94,87 @@ submodules-check: ## Verify submodules are properly initialized
 # Lean 4 Verification
 # =============================================================================
 
+# Toolchain from lean-toolchain file
+LEAN_TOOLCHAIN := $(shell cat lean-toolchain 2>/dev/null || echo "leanprover/lean4:v4.23.0")
+
+.PHONY: elan-install
+elan-install: ## Install elan and download Lean toolchain
+	@echo "Installing elan (Lean version manager)..."
+	@if [ ! -d "$$HOME/.elan" ]; then \
+		curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y; \
+		echo "✓ Elan installed"; \
+	else \
+		echo "✓ Elan already installed"; \
+	fi
+	@echo "Installing toolchain: $(LEAN_TOOLCHAIN)..."
+	@$$HOME/.elan/bin/elan toolchain install $(LEAN_TOOLCHAIN)
+	@$$HOME/.elan/bin/elan default $(LEAN_TOOLCHAIN)
+	@echo "✓ Toolchain installed"
+
 .PHONY: check-lean
 check-lean: ## Check if Lean 4 is installed and show version
 	@echo "Checking Lean 4 installation..."
-	@if command -v $(LEAN) >/dev/null 2>&1; then \
+	@if command -v $(LEAN) >/dev/null 2>&1 && $(LEAN) --version 2>/dev/null; then \
 		echo "✓ Lean found: $$(which $(LEAN))"; \
-		$(LEAN) --version; \
+	elif [ -x "$$HOME/.elan/bin/lean" ]; then \
+		echo "✓ Lean found: $$HOME/.elan/bin/lean"; \
+		$$HOME/.elan/bin/lean --version; \
 	else \
-		echo "✗ Lean 4 not found in PATH"; \
-		echo "  Install via: curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh"; \
+		echo "✗ Lean 4 not found or toolchain not installed"; \
+		echo "  Run: gmake elan-install"; \
 		exit 1; \
 	fi
 
 .PHONY: check-lake
 check-lake: ## Check if Lake (Lean build tool) is installed
 	@echo "Checking Lake installation..."
-	@if command -v $(LAKE) >/dev/null 2>&1; then \
+	@if command -v $(LAKE) >/dev/null 2>&1 && $(LAKE) --version 2>/dev/null; then \
 		echo "✓ Lake found: $$(which $(LAKE))"; \
-		$(LAKE) --version; \
+	elif [ -x "$$HOME/.elan/bin/lake" ]; then \
+		echo "✓ Lake found: $$HOME/.elan/bin/lake"; \
+		$$HOME/.elan/bin/lake --version; \
 	else \
-		echo "✗ Lake not found (installed with Lean 4)"; \
+		echo "✗ Lake not found"; \
+		echo "  Run: gmake elan-install"; \
 		exit 1; \
 	fi
 
 .PHONY: check-tools
-check-tools: check-lean check-lake ## Check all required tools
+check-tools: check-lean check-lake check-racket ## Check all required tools
 	@echo "✓ All tools verified"
+
+.PHONY: lean-build
+lean-build: ## Build Lean proofs
+	@echo "Building Lean proofs..."
+	@if [ -x "$$HOME/.elan/bin/lake" ]; then \
+		$$HOME/.elan/bin/lake build; \
+	else \
+		$(LAKE) build; \
+	fi
+	@echo "✓ Lean build complete"
+
+# =============================================================================
+# Racket Contract Examples
+# =============================================================================
+
+RACKET := racket
+
+.PHONY: check-racket
+check-racket: ## Check if Racket is installed
+	@echo "Checking Racket installation..."
+	@if command -v $(RACKET) >/dev/null 2>&1; then \
+		echo "✓ Racket found: $$(which $(RACKET))"; \
+		$(RACKET) --version; \
+	else \
+		echo "✗ Racket not found"; \
+		echo "  Install via: pkg install racket"; \
+		exit 1; \
+	fi
+
+.PHONY: racket-chaos
+racket-chaos: ## Run the chaos comparator contract demo
+	@echo "Running chaos comparator demo..."
+	@$(RACKET) $(SRC_DIR)/chaos-comparator.rkt
 
 # =============================================================================
 # Tutorial Targets
