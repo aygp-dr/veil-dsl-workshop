@@ -223,6 +223,13 @@ racket-chaos: ## Run the chaos comparator contract demo
 	@echo "Running chaos comparator demo..."
 	@$(RACKET) $(SRC_DIR)/chaos-comparator.rkt
 
+.PHONY: racket-sort-lies
+racket-sort-lies: ## Run the "sort lies" visualization comedy
+	@$(RACKET) $(SRC_DIR)/sort-lies.rkt
+
+.PHONY: racket-all
+racket-all: racket-chaos racket-sort-lies ## Run all Racket demos
+
 # =============================================================================
 # Tutorial Targets
 # =============================================================================
